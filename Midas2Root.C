@@ -13,8 +13,8 @@ using namespace std;
 #include <TSystem.h>
 
 // NPLib headers
-#include "/home/padsley/codes/nptool/NPLib/include/TW1Data.h"
-#include "/home/padsley/codes/nptool/NPLib/include/TSplitPoleData.h"
+//#include "/home/padsley/codes/nptool/NPLib/include/TW1Data.h"
+//#include "/home/padsley/codes/nptool/NPLib/include/TSplitPoleData.h"
 
 
 void Midas2Root(TString dirin, TString dirout, Int_t run, int section, Bool_t kOld = false)
@@ -36,8 +36,8 @@ void Midas2Root(TString dirin, TString dirout, Int_t run, int section, Bool_t kO
      {
        f_out = Form("%sR%d_%d.root", dirout.Data(), run, section);
      }
-   // cout << "formatted names" << endl;
-   f_in;
+    cout << "formatted names" << endl;
+    cout << f_in.Data() << endl;
    f_out;
    
    // declare variables
@@ -51,6 +51,10 @@ void Midas2Root(TString dirin, TString dirout, Int_t run, int section, Bool_t kO
    // split-pole
    UShort_t SPpos, SPde, SPwire, SPplasp, SPplasg;
 
+   short SPposFromTime;
+
+   short SPposStart, SPposStop;
+
    // open data file
    ifstream fin(f_in,ifstream::binary);
 
@@ -63,11 +67,11 @@ void Midas2Root(TString dirin, TString dirout, Int_t run, int section, Bool_t kO
    // general
    tout->Branch("RunNumber", &runNum, "RunNumber/I");
    // dsssd
-   TW1Data *fW1Data = new TW1Data();
-   tout->Branch("W1", "TW1Data", &fW1Data);
+   //TW1Data *fW1Data = new TW1Data();
+   //tout->Branch("W1", "TW1Data", &fW1Data);
    // sp
-   TSplitPoleData *fSplitPoleData = new TSplitPoleData();
-   tout->Branch("SplitPole", "TSplitPoleData", &fSplitPoleData);
+   //TSplitPoleData *fSplitPoleData = new TSplitPoleData();
+   //tout->Branch("SplitPole", "TSplitPoleData", &fSplitPoleData);
 
    if (kOld) {
       tout->Branch("evtNum",&evtNum,"evtNum/I");
@@ -85,6 +89,11 @@ void Midas2Root(TString dirin, TString dirout, Int_t run, int section, Bool_t kO
       tout->Branch("SPwire",&SPwire,"SPwire/s");
       tout->Branch("SPplasp",&SPplasp,"SPplasp/s");
       tout->Branch("SPplasg",&SPplasg,"SPplasg/s");
+
+      tout->Branch("SPposStart",&SPposStart,"SPposStart/s");
+      tout->Branch("SPposStop",&SPposStop,"SPposStop/s");
+
+      tout->Branch("SPposFromTime",&SPposFromTime,"SPposFromTime/s");
    }
 
    const Int_t blkSize = 16384;
@@ -122,8 +131,8 @@ void Midas2Root(TString dirin, TString dirout, Int_t run, int section, Bool_t kO
 
             if (evt_len > 0) {
                // reset values
-               fW1Data->Clear();
-               fSplitPoleData->Clear();
+	      //          fW1Data->Clear();
+	      //fSplitPoleData->Clear();
 
                scalarN = 0;
                evtNum=0;
@@ -135,6 +144,10 @@ void Midas2Root(TString dirin, TString dirout, Int_t run, int section, Bool_t kO
                SPwire = 0;
                SPplasp = 0;
                SPplasg = 0;
+
+	       SPposFromTime = 0;
+	       SPposStop = 0;
+	       SPposStart = 0;
 
                for (Int_t i = 0; i < 32; ++i) {
                   scalar[i] = 0;
@@ -152,7 +165,7 @@ void Midas2Root(TString dirin, TString dirout, Int_t run, int section, Bool_t kO
                   // adc group and channel (item)
                   group = *half & 0x00ff;
                   item  = *half >> 8 & 0x003f;
-		  cout << group << endl;
+		  //cout << group << endl;
                   // adc case
                   if (group > 0 && group < 20) {
                      address = 32 * (group - 1) + item;
@@ -172,19 +185,19 @@ void Midas2Root(TString dirin, TString dirout, Int_t run, int section, Bool_t kO
 
                         if (group < 7) {  // dsssd case
                            if (item < 16) {  // p side (front)
-                              fW1Data->SetFrontE(group, item, *half);
+                             // fW1Data->SetFrontE(group, item, *half);
                            }
                            else {   // n side (back)
-                              fW1Data->SetBackE(group, item%16, *half);
+			     //   fW1Data->SetBackE(group, item%16, *half);
                            }
 //			   cout << group << "\t" << item << "\t" << *half << endl;
                         }
                         else {   // sp case
-                           if (address == 192) fSplitPoleData->SetPosition(*half);
-                           if (address == 193) fSplitPoleData->SetDeltaE(*half);
-                           if (address == 194) fSplitPoleData->SetWire(*half);
-                           if (address == 195) fSplitPoleData->SetPlasticP(*half);
-                           if (address == 196) fSplitPoleData->SetPlasticG(*half);
+			  //           if (address == 192) fSplitPoleData->SetPosition(*half);
+                          // if (address == 193) fSplitPoleData->SetDeltaE(*half);
+                          // if (address == 194) fSplitPoleData->SetWire(*half);
+                          // if (address == 195) fSplitPoleData->SetPlasticP(*half);
+                          // if (address == 196) fSplitPoleData->SetPlasticG(*half);
                         }
 
                      }
@@ -199,16 +212,16 @@ void Midas2Root(TString dirin, TString dirout, Int_t run, int section, Bool_t kO
                         Int_t det   = address/16 + 1;
                         Int_t strip = address%16;
                         if (address < 96) {  // p-side (front)
-                           fW1Data->SetFrontT(det, strip, *half);
+                          // fW1Data->SetFrontT(det, strip, *half);
                         }
                         else {   // n-side (back)
-                           fW1Data->SetBackT(det-6, strip, *half);   // only D1 has timing for back signals
+                          // fW1Data->SetBackT(det-6, strip, *half);   // only D1 has timing for back signals
                         }
                      }
 
                      // SP
-                     if (address == 117) fSplitPoleData->SetTime1(*half);
-                     if (address == 126) fSplitPoleData->SetTime2(*half);
+		     // if (address == 117) fSplitPoleData->SetTime1(*half);
+		     // if (address == 126) fSplitPoleData->SetTime2(*half);
 
                      tdcList[tdcN] = address;
                      tdcData[tdcN] = *half;
@@ -216,11 +229,20 @@ void Midas2Root(TString dirin, TString dirout, Int_t run, int section, Bool_t kO
                      if (address == 126 && *half < 800) {
 //                        cout << tdcN << "\t" << group << "\t" << item << "\t" << address << "\t" << *half << "\t" << fSplitPoleData->GetTime2() << endl;
                      }
+
+		     if(address==113 && SPposStop!=0)cout << "ACHTUNG! SPposStop" << endl;
+		     if(address==114 && SPposStart!=0)cout << "ACHTUNG! SPposStart" << endl;
+
+
+		     if(address==113)SPposStop = *half;
+		     if(address==114)SPposStart = *half;
                      ++tdcN;
                   }
+		  
+		  
 
                   // scaler case
-                  else if (group == 30){cout << "L223" << endl;
+                  else if (group == 30){
                      for (Int_t i = 0; i < 3; i++) {
                         half++;
                         if (*half < 0) scalar[i] = 65536 + (*half);
@@ -230,7 +252,7 @@ void Midas2Root(TString dirin, TString dirout, Int_t run, int section, Bool_t kO
                         scalar[i] += (*half) * 65536;
                         if (i == 2) {
                            scalarN = scalar[i];
-                           fSplitPoleData->SetTick(scalar[i]);
+			   // fSplitPoleData->SetTick(scalar[i]);
                         }
                         half++;
                      }
@@ -243,6 +265,8 @@ void Midas2Root(TString dirin, TString dirout, Int_t run, int section, Bool_t kO
                   }
                   ++half;
                }
+	       
+	       SPposFromTime = SPposStop - SPposStart;
 
                events++;
                evtNum = events-1;
